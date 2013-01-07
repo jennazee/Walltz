@@ -1,13 +1,15 @@
 import json
 import sys
+import string
 
 from bs4 import BeautifulSoup
 import requests
+from nltk import Text, word_tokenize
 
-def get_wall_json(username):
+def get_wall_data(username):
     wall_data = []
     username = username
-    auth = 'AAAAAAITEghMBAAyE0sfOhpR18ZBHQJfbqT3vN4K17ETza3UOxb5XWW2lW6SZCtHqHU2Bff3BxuZC4ZCszZBhU2HLKZCQOYY3m6QVQ5ktV7hQketi9pb4r3'
+    auth = [snip]
     wall = json.loads(requests.get('https://graph.facebook.com/' + username + '/feed?access_token=' + auth).text)
     wall_data.extend(wall['data'])
     next = wall['paging']['next']
@@ -17,10 +19,28 @@ def get_wall_json(username):
         wall_data.extend(wall['data'])
         next = wall['paging']['next']
 
+    return wall_data
 
+def get_posts(wall_data):
+    posts = []
+    for post in wall_data:
+        try:
+            post['message']
+        except KeyError:
+            continue
+        else:
+            posts.append(post['message'].strip('.'))
+
+    return string.join(posts, '. ')
+
+def make_poetry(corpus):
+    print corpus
+    tokens = word_tokenize(corpus)
+    text = Text(tokens)
+    return text.generate()
 
 if __name__ == '__main__':
     if len(sys.argv) != 2:
         print 'Please include a valid username.'
     else:
-        get_wall_json(sys.argv[1])
+        make_poetry(get_posts(get_wall_data(sys.argv[1])))
